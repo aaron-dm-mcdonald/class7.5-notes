@@ -1,37 +1,51 @@
 # Class 7.5 / SEIR-1: Week 4 Prep Notes
 
+---
+
 ## Table of Contents
+
+- [Introduction](#introduction)
+- [Why Is This Tool Needed?](#why-is-this-tool-needed)
+- [API](#api)
+- [Google Cloud SDK](#google-cloud-sdk)
+- [The Terraform Solution](#the-terraform-solution)
+- [Terraform Workflow](#terraform-workflow)
+- [Development Environment Setup](#development-environment-setup)
+- [Exploring VS Code](#exploring-vs-code)
+- [Basic Terraform](#basic-terraform)
+- [The Google Provider and a Basic Infrastructure Example](#the-google-provider-and-a-basic-infrastructure-example)
+- [Learning Resources](#learning-resources)
 
 ---
 
 ## Introduction
 
-This week will be covering the fundamentals of Terraform. This is an automation tool for provisioning and managing cloud infrastructure and other tools. It is a tool in the category called IaC (Infrastructure as Code). It is the most popular IaC tool (by far) and is cloud agnostic (meaning it works in essentially any public cloud and even private clouds).
+This week will be covering the fundamentals of Terraform. This is an automation tool for provisioning and managing cloud infrastructure and other tools. It is a tool in the category called IaC (Infrastructure as Code). It is the most popular IaC tool (by far) and is cloud agnostic, meaning it works in essentially any public cloud and even private clouds.
 
-I will start from the ground up by showing why we need this tool, issues it fixes, how to set it up, and eventually how to redo the week 1/2 labs with Terraform from scratch.
+We will start from the ground up by showing why we need this tool, the issues it fixes, how to set it up, and eventually how to redo the Week 1/2 labs with Terraform from scratch.
 
 ### Class Overview
 
-* Introduction
-* Discuss prelims
-* Discuss goals
-* VS Code, HashiCorp docs
-* Discuss the end goal
-* Discuss Terraform features
-* Discuss HCL syntax
-* Build out code
-* Terraform workflow
-* Troubleshooting
+- Introduction
+- Discuss prelims
+- Discuss goals
+- VS Code, HashiCorp docs
+- Discuss the end goal
+- Discuss Terraform features
+- Discuss HCL syntax
+- Build out code
+- Terraform workflow
+- Troubleshooting
 
 ### Preliminary Materials
 
 The script checks the following:
 
-* Google Cloud SDK (in particular, `gcloud`) is installed and authenticated
-* Terraform binary is installed and up to date
-* TheoWAF folder present at `~/Documents/TheoWAF/class7.5/GCP/Terraform`
-* Creates a `.gitignore` file
-* Verifies a JSON token is present in the `Terraform` directory
+- Google Cloud SDK (in particular, `gcloud`) is installed and authenticated
+- Terraform binary is installed and up to date
+- TheoWAF folder present at `~/Documents/TheoWAF/class7.5/GCP/Terraform`
+- Creates a `.gitignore` file
+- Verifies a JSON token is present in the `Terraform` directory
 
 It will create the TheoWAF folder structure if needed and will download a `.gitignore` file configured for Terraform projects.
 
@@ -41,36 +55,36 @@ curl https://raw.githubusercontent.com/aaron-dm-mcdonald/class7.5-notes/refs/hea
 
 ---
 
-## Why is this tool needed?
+## Why Is This Tool Needed?
 
-In enterprise environments automation becomes critical and is one of the main tasks of DevOps. Using the cloud how we have been thus far is called ClickOps (since we click in the console to do things). Cloud infrastructure allows for a great deal of automation so these two areas have a lot of crossover. Naturally automating the creation of infrastructure in the cloud platform follows. However there are other reasons to use this tool which become clear from the cons of ClickOps.
+In enterprise environments, automation becomes critical and is one of the main tasks of DevOps. Using the cloud the way we have been so far is called ClickOps, since we click through the console to do things. Cloud infrastructure allows for a great deal of automation, so these two areas have a lot of crossover. Naturally, automating the creation of infrastructure in the cloud follows. There are also other reasons to use this tool, which become clear from the cons of ClickOps.
 
 **Cons of ClickOps:**
 
-* Difficult to reproduce across environments (dev, staging, prod)
-* Not self-documenting: no record of what you clicked or why
-* Impossible to automate or version control
-* No single source of truth that is auditable
+- Difficult to reproduce across environments (dev, staging, prod)
+- Not self-documenting: no record of what you clicked or why
+- Impossible to automate or version control
+- No single source of truth that is auditable
 
-However *why* specifically this tool? Why is it special? First we should discuss more traditional means of automation. We will use the example of the week one lab (except to keep things short I will leave off the startup script).
+But *why* this tool specifically? First we should discuss more traditional means of automation, using the Week 1 lab as an example (leaving off the startup script for brevity).
 
 ---
 
 ## API
 
-An API (Application Programming Interface) is at the heart of GCP and all cloud platforms. It allows programs, services, and computers to communicate with GCP. Every "button" in the GCP console actually makes API calls behind the scenes.
+An API (Application Programming Interface) is at the heart of GCP and all cloud platforms. It allows programs, services, and computers to communicate with GCP. Every button in the GCP console actually makes API calls behind the scenes.
 
 **API call example:**
 
-Here we look at an HTTP request that could be sent to the GCP API. Let's break this down. Realistically this would never be done.
+Here we look at an HTTP request that could be sent to the GCP API. Realistically this would never be done manually, but it helps illustrate what is happening under the hood.
 
-* A POST request is the opposite of what you normally do when you load a website's homepage. Instead of getting data, you are sending data.
-* API endpoint is just a very specific URL (website address basically) that is meant to receive and then do certain things. Here we are using the Compute Engine endpoint.
-* Host is the actual website or API location on the internet
-* `HTTP/1.1` is the version of the HTTP protocol and format
-* Content type is saying the "payload" (like the body of an email) is formatted as JSON
-* Content length is how large in bytes this request is
-* Authorization is where you would prove you are allowed to do something in GCP. How you generate this is a whole different discussion
+- A `POST` request is the opposite of loading a webpage; instead of getting data, you are sending it
+- The API endpoint is a specific URL meant to receive a request and act on it; here we use the Compute Engine endpoint
+- `Host` is the actual location of the API on the internet
+- `HTTP/1.1` is the version of the HTTP protocol being used
+- `Content-Type` declares that the payload is formatted as JSON
+- `Content-Length` is the size of the request body in bytes
+- `Authorization` is where you prove you are allowed to perform the action in GCP
 
 ```http
 POST /compute/v1/projects/<YOUR_PROJECT_ID>/zones/<YOUR_ZONE>/instances HTTP/1.1
@@ -100,11 +114,11 @@ Content-Length: 347
 
 **Cons of direct API calls:**
 
-* Extremely verbose and error-prone
-* Requires manual authentication handling
-* Not designed for human interaction
-* No state tracking: you have to manually track what you've created
-* Hard to make small edits
+- Extremely verbose and error-prone
+- Requires manual authentication handling
+- Not designed for human interaction
+- No state tracking: you must manually track what you have created
+- Hard to make small edits
 
 **Reference:** https://docs.cloud.google.com/compute/docs/reference/rest/v1/instances/insert
 
@@ -112,9 +126,9 @@ Content-Length: 347
 
 ## Google Cloud SDK
 
-The Google Cloud SDK (software development kit) is a collection of tools and libraries for engineers to use GCP. Of this you have heard of one specific tool already called `gcloud`. `gcloud` is the largest tool in this collection; however, there are many specialized tools and additionally there are libraries and modules for programming languages to work with GCP. We will ignore these extra tools for now and focus in on `gcloud`.
+The Google Cloud SDK is a collection of tools and libraries for working with GCP. The most familiar tool in it is `gcloud`. While `gcloud` is the largest component, there are also many specialized tools and language-specific libraries. We will focus on `gcloud` for now.
 
-`gcloud` is a CLI utility that is written in Python. It allows us to interact with GCP simply by using various `gcloud` commands. It handles authentication for us when we run `gcloud init` by making credentials in a special folder on your computer via SSO (when you had to run `gcloud init` and then your web browser took you somewhere). It allows us to do almost everything we can do in the console (and what it can't do there are specialized, even better tools in the SDK). In fact, for the GCP services it's meant to manage, it can do *more* than what we can do in the console as far as certain features and configuration goes. It also lets us preset our project and set default region/zone. Instead of having to do that very verbose API call from above we could accomplish the same thing with:
+`gcloud` is a CLI utility written in Python. It handles authentication when you run `gcloud init` -- your browser is opened and credentials are saved locally via SSO. It can do almost everything the console can do, and in some cases more. It also lets you preset a default project, region, and zone. Instead of the verbose API call above, the same VM creation looks like this:
 
 ```bash
 gcloud compute instances create <INSTANCE_NAME> \
@@ -126,40 +140,40 @@ gcloud compute instances create <INSTANCE_NAME> \
   --network=default
 ```
 
-**Cons of GCP CLI:**
+**Cons of the GCP CLI:**
 
-* Many flags needed for the many parameters
-* Different commands needed for create, update, and delete operations
-* Easy to make mistakes
-* Very hard to reproduce
-* No state: CLI doesn't remember what resources it created
-* No idempotency: running the same command twice creates duplicate resources
-* Entirely imperative: you say what you want and in the order you want and it does it (a good and bad thing depending on use case)
+- Many flags needed for many parameters
+- Different commands needed for create, update, and delete operations
+- Easy to make mistakes
+- Very hard to reproduce
+- No state: the CLI does not remember what resources it created
+- No idempotency: running the same command twice creates duplicate resources
+- Entirely imperative: you say what to do and in what order
 
-**Pros of GCP CLI:**
+**Pros of the GCP CLI:**
 
-* I don't want you to think this tool is bad or unneeded; it just isn't the ideal tool to automate the creation of infrastructure
-* It is used for "one-time" issues
-* It can quickly assist with admin issues like wrapping SSH sessions or restarting a fleet of VMs
-* It can be used in shell scripts easily
-* It can effectively query (search for) and filter (select the important) information from resources in GCP
+> Note: The CLI is not a bad tool- it just is not the ideal tool for automating infrastructure creation.
+
+- Great for one-time tasks and quick admin work (wrapping SSH sessions, restarting a fleet of VMs)
+- Easy to embed in shell scripts
+- Very effective for querying and filtering resource information
 
 ---
 
 ## The Terraform Solution
 
-Terraform solves these problems from the last few sections by:
+Terraform solves the problems from the previous sections by:
 
-* Using declarative code (describe what you want, not how to create it)
-* Being stateful (it knows what exists and what needs to change)
-* Being idempotent (safe to run multiple times if no configuration changes)
-* Managing dependencies automatically (it solves the "dependency chain" by figuring out what needs to be made first, which is very good when you have say 50 things that need to be created)
-* Supporting version control
-* Enabling code reuse
+- Using **declarative code**- describe what you want, not how to create it
+- Being **stateful**- it knows what exists and what needs to change
+- Being **idempotent**- safe to run multiple times if no configuration has changed
+- **Managing dependencies automatically**- it figures out what needs to be created first, which matters a lot when you have 50 resources with dependencies between them
+- Supporting **version control**
+- Enabling **code reuse**
 
-### What is Terraform?
+### What Is Terraform?
 
-Terraform is an infrastructure as code (IaC) tool. Infrastructure as Code means that you write out everything as actual code just like a software engineer would. You test it along the way just like a software engineer would. You use each step of the software development lifecycle and methodology like a software engineer would, but rather than writing application code, you are writing code that defines infrastructure.
+Terraform is an IaC tool. Infrastructure as Code means writing infrastructure definitions as actual code. Instead of clicking on things in the console you are testing code as you write along the way, following the software development lifecycle, but instead of application code, you are writing code that defines infrastructure.
 
 Terraform lets you define, provision, query, and manage cloud resources using a declarative configuration language. Instead of clicking through the GCP console or writing complex CLI commands, you write code that describes your desired infrastructure, and Terraform handles all the API calls and sequencing needed to make it happen.
 
@@ -167,46 +181,46 @@ Terraform lets you define, provision, query, and manage cloud resources using a 
 
 ### Key Terms
 
-* **IaC (Infrastructure as Code):** The practice of managing infrastructure through code rather than manual coneednfiguration. Terraform is an IaC tool that allows us to write code that interacts with cloud provider APIs.
+- **IaC (Infrastructure as Code):** The practice of managing infrastructure through code rather than manual configuration. Terraform is an IaC tool that writes code to interact with cloud provider APIs.
 
-* **Terraform:** An open-source IaC tool created by HashiCorp for cloud automation. Cloud agnostic (works with AWS, Azure, GCP, etc.), widely used, simple declarative language, and extensive community support.
+- **Terraform:** An open-source IaC tool created by HashiCorp. Cloud agnostic (works with AWS, Azure, GCP, etc.), widely used, and built on a simple declarative language with extensive community support.
 
-* **Statefile:** A JSON file (`terraform.tfstate`) that keeps track of what infrastructure Terraform is managing, the current attributes of each resource, and metadata. This is how Terraform knows what already exists vs. what needs to be created or changed. **Never manually edit or delete this file.**
+- **Statefile:** A JSON file (`terraform.tfstate`) that tracks what infrastructure Terraform is managing, the current attributes of each resource, and metadata. This is how Terraform knows what already exists vs. what needs to be created or changed. **Never manually edit or delete this file.**
 
-* **Provider:** A plugin that enables Terraform to interact with a specific cloud platform or service. In our case, we use the Google provider to interact with GCP APIs.
+- **Provider:** A plugin that enables Terraform to interact with a specific cloud platform or service. We use the Google provider to interact with GCP APIs.
 
-* **HCL (HashiCorp Configuration Language):** Terraform's declarative configuration language. More human-readable than JSON. While primarily declarative (you describe what you want), it includes some procedural features like loops and conditionals.
+- **HCL (HashiCorp Configuration Language):** Terraform's declarative configuration language. More human-readable than JSON. While primarily declarative, it includes some procedural features like loops and conditionals.
 
-* **Idempotency:** A critical property of Terraform; running `terraform apply` multiple times with the same configuration produces the same result. Terraform won't recreate or modify resources unless your code changes or state drift is detected.
+- **Idempotency:** A critical property of Terraform. Running `terraform apply` multiple times with the same configuration produces the same result. Terraform will not recreate or modify resources unless your code changes or state drift is detected.
 
-* **Resource:** A block of HCL code that defines infrastructure or configuration to create or edit in the cloud, like a VPC or VM instance. Each resource has a type and configuration parameters.
+- **Resource:** A block of HCL code that defines infrastructure to create or manage in the cloud, such as a VPC or VM instance. Each resource has a type and configuration parameters.
 
-* **Execution Plan:** Generated by `terraform plan`, this shows exactly what Terraform will do before it does it; what resources will be created, modified, or destroyed, and in what order. This is Terraform's "dry run" feature.
+- **Execution Plan:** Generated by `terraform plan`, this shows exactly what Terraform will do before it does it. what resources will be created, modified, or destroyed, and in what order. This is Terraform's dry-run feature.
 
-* **State Drift:** When the actual infrastructure in GCP differs from what's recorded in the Terraform state file. This can happen if someone manually changes resources in the console. Terraform can detect and correct drift using `terraform plan` and `terraform apply`; however, sometimes it exceeds the capabilities of the integrated drift correction tools.
+- **State Drift:** When actual infrastructure in GCP differs from what is recorded in the state file. This can happen if someone manually changes resources in the console. Terraform can detect and correct drift using `terraform plan` and `terraform apply`, though severe drift can exceed its built-in correction capabilities.
 
 ---
 
 ## Terraform Workflow
-We will discuss this more later but for now these are the most important terraform commands:
 
+We will discuss this in more detail later, but these are the most important Terraform commands:
 
 ```bash
-# Initialize working directory: downloads provider plugins, generates lock file, etc
+# Initialize the working directory: downloads provider plugins, generates lock file, etc.
 terraform init
 
-# Validate HCL syntax and configuration (check your "grammar", not if it "makes sense" otherwise known as semantics)
-# This tests if Terraform understands your code but does not guarantee that GCP will
+# Validate HCL syntax and configuration (checks "grammar", not semantics)
+# This confirms Terraform understands your code but does not guarantee GCP will accept it
 terraform validate
 
-# Generate the execution plan and diff: preview what will change and catch some possible errors from the GCP API
-# This may collect and save data from GCP but will never change anything
+# Generate the execution plan: preview what will change and catch potential API-level errors
+# May collect data from GCP but will never make changes
 terraform plan
 
-# Apply changes: actually create/modify/destroy infrastructure
+# Apply changes: actually create, modify, or destroy infrastructure
 terraform apply
 
-# Destroy all resources managed by this statefile
+# Destroy all resources managed by this state file
 terraform destroy
 ```
 
@@ -214,88 +228,252 @@ terraform destroy
 
 1. Write or modify `.tf` files
 2. Run `terraform validate` to check syntax
-3. Run `terraform plan` to see what will change
+3. Run `terraform plan` to preview changes
 4. Review the plan carefully
-5. Run `terraform apply` to make the changes
+5. Run `terraform apply` to execute
 6. Terraform updates the state file automatically
 
 **CLI documentation:** https://developer.hashicorp.com/terraform/cli/commands
 
 ---
 
+## Development Environment Setup
 
-## Get setup
+Before we dive into Terraform, let's do some initial setup. We will be using the TheoWAF folder, specifically the Terraform subdirectory. We will also be working in VS Code. If you do not have Git Bash (as an administrator) or Terminal open, go ahead and open it now.
 
-Before we dive into Terraform lets do some inital steps. We will be using the TheoWAF folder (specifically the terraform subdirectory...I will call them directories from now on and so should you). Additionally we will be working with VS Code. If you don't have Git Bash (as an administrator) or Terminal open then go ahead and do so now. 
+There are three commands everyone should be familiar with. These are the bread and butter of using the CLI:
 
-I need to introduce 3 commands everybody should be familar with. These are the bread and butter of using the CLI. 
-- `pwd` - print working directory 
-- `cd` - change directory 
-- `ls` - list 
+- `pwd` - print working directory
+- `cd` - change directory
+- `ls` - list
 
-Lets look at these in more detail. 
+### pwd
 
-### pwd 
+This stands for "print working directory." In IT, "print" simply means to output something to the screen. So `pwd` tells you the folder you are currently working in, expressed as an absolute file path.
 
-So this stands for "print working directory" and that might sound complicated. We already know "directory" is like a folder. "Print" simply means, in IT terminology, to output something. So this command will output (or simply: tell us) our "working folder." That sounds less complicated. "working" in this context simply means "the directory you are currently using". So all together pwd will "tell us the folder we are using." How it does that is by telling us the absolute file path. Lets explain file paths. 
+A **file path** is the location of a file or directory on your computer, like a URL but for your local filesystem. There are two types:
 
-**file path** is the location (like a url but on your computer) of a file or directory. There are two kinds. 
+**Absolute file path** - directions from a fixed starting point (the drive root) all the way to your destination:
 
-**Absolute file path** is like getting directions from point A to point B. It doesn't matter where you are, you can still explain how to get to point A from point B. Point A for an absolute file path is the specific drive (like C:) and point B is the final file/directory you are interested in. It tells you each step. 
+```
+/c/class/class-7.5/notes/week-4
+```
 
-`/c/class/class-7.5/notes/week-4` is my current absolute file path. It says that if I were to start in the `C:` drive and go to the `class` directory and then go to the `class-7.5` directory and then the `notes` directory and then the `week-4` directory I would get to where I am "working" currently. From point A to Point B. 
+This says: start at the `C:` drive, go into `class`, then `class-7.5`, then `notes`, then `week-4`.
 
-**Relative file path** is worth mentioning here. It is the other type of file path. Instead of saying from point A to point B it assumes we are not at point A but somewhere along the directory and gives only the _needed_ directions. 
+**Relative file path** - directions from your current location rather than from the root. If you are already in `/c/class/class-7.5`, you can navigate to `week-4` with just `notes/week-4` instead of the full path.
 
-Say I am here: `/c/class/class-7.5` and wanted to get to the `week-4` folder, I could tell my computer to go to `/c/class/class-7.5/notes/week-4` and that would work fine, but I also could tell it "go to `notes/week-4` and it would see that I am in the `class-7.5` directory and then go into the `notes` directory and then into the `week-4` directory. 
-
-This [video](https://www.youtube.com/watch?v=ephId3mYu9o) might help, but just using these commands will help the most. It sounds wordy on paper but it isn't a hard concept to understand. 
-
-So in the end, `pwd` simply tells us the absolute file path of the directory we are currently in. 
+This [video](https://www.youtube.com/watch?v=ephId3mYu9o) may help, but honestly just running these commands a few times is the fastest way to get comfortable with them.
 
 ### cd
 
-This command (change directory) allows us to change our working directory. Essentially it lets us open other directories and move into them. we use it with a file path next to it like this: `cd dir1/dir2` would open the `dir1` folder and then the `dir2` directory. 
+`cd` (change directory) moves you into another directory. Use it with a path: `cd dir1/dir2` opens `dir1` and then moves into `dir2`.
 
-### ls 
+### ls
 
-This command just shows us the folders and files in the working directory. It lets us look inside the directory. 
+`ls` lists the files and folders inside your current directory.
 
-### Now you do it!
+### Now You Try
 
-In your CLI (git bash or terminal) run `pwd` and run `ls` and note what is there. On git bash `ls` may produce quite a bit of output. Lets go to the correct folder. Run `cd $HOME/Documents/TheoWAF/class7.5/GCP/Terraform` (note: this is an absoulute file path but I use a variable in here, don't worry about it). Now run `pwd` and `ls` and look at the output. You should see a file that ends in `.json` and a file called `.gitignore`. You should see a directory (it will end in `/` like all directories) called `terraform-040826/`. Let's move in that directory. Run `cd terraform-041026` and then run `ls` and `pwd` to see what changed. You should see a copy of that `.json` and `.gitignore` file in there. Finally lets open VS Code by running the command `code .` and VS Code will open. 
+In your CLI (Git Bash or Terminal), run `pwd` and `ls` and note the output. Then navigate to the correct folder:
 
+```bash
+cd $HOME/Documents/TheoWAF/class7.5/GCP/Terraform
+```
 
+Run `pwd` and `ls` again. You should see a `.json` file, a `.gitignore`, and a directory named `terraform-<something>` created by the `prelim.sh` script. Move into that directory:
 
+```bash
+cd <that directory's name>
+```
 
+Run `ls` and `pwd` again to confirm you see copies of the `.json` and `.gitignore` files. Finally, open VS Code from this location:
 
-
-
-
-
-
+```bash
+code .
+```
 
 ---
+
+## Exploring VS Code
+
+We will start by creating a file in VS Code named `main.tf`. As far as Terraform is concerned, file names do not matter as long as they end in `.tf`- Terraform is declarative, so it does not care about order or file names, only about what you have declared.
+
+Make sure the **Explorer** is open in the left pane. If it is not, click the explorer icon. Then create a new file using the "New File" button as shown [here](../assets/make-new-file.PNG).
+
+Next, open an integrated terminal via the menu bar: **Terminal > New Terminal**. Mac users can use the default terminal. Windows users will see PowerShell open by default. Switch to Git Bash by clicking the **Launch Profile** chevron (the downward arrow), selecting **Select Default Profile**, then choosing **Git Bash** from the command palette. Click the **+** icon in the terminal panel to open a Git Bash session. It will default to Git Bash going forward.
+
+At this point VS Code should look like [this](../assets/vs-code-done.PNG). You can close anything else except a browser with the GCP console open.
+
+---
+
+## Basic Terraform
+
+### Basic Syntax
+
+Before we deploy anything to GCP, let's look at what the language looks like and practice the workflow locally. This section does not require authentication since we are not touching GCP.
+
+Terraform code is organized into **blocks**. A block defines what a section of code is for and usually gives it a unique **label**. A block contains **arguments** -- key-value pairs that configure the block. Arguments are wrapped in curly braces. The general structure:
+
+```hcl
+<block type> <label> {
+  argument1 = value1
+  argument2 = value2
+}
+```
+
+Indentation is not required by Terraform, but the two-space indent shown above is the idiomatic style recommended by HashiCorp.
+
+[Blocks and arguments docs](https://developer.hashicorp.com/terraform/language/syntax/configuration)
+
+### The Terraform Block
+
+All Terraform configurations should include a `terraform` block. This is largely boilerplate but lets you set the minimum required Terraform version. Add this to `main.tf`:
+
+```hcl
+terraform {
+  required_version = ">= 1.5"
+}
+```
+
+This block has no label and one argument, specifying that the configuration requires Terraform 1.5 or higher. Version 1.5 was the last release with major language changes, which is why it is a reasonable floor.
+
+[Terraform block](https://developer.hashicorp.com/terraform/language/block/terraform)
+[Version constraints](https://developer.hashicorp.com/terraform/language/expressions/version-constraints)
+
+### Output
+
+On its own, the `terraform` block does nothing visible. Let's add an `output` block, which prints a value to the terminal when Terraform runs:
+
+```hcl
+output "sample_label" {
+  value       = "Hello, world!"
+  description = "This is some working Terraform code!"
+}
+```
+
+This block has one label (`sample_label`), a `value` argument (what gets printed), and a `description` argument (a note for us). Add this to `main.tf` after a blank line.
+
+[Output docs](https://developer.hashicorp.com/terraform/language/block/output)
+
+### Running the Workflow
+
+1. `terraform init`- only needs to be run once per project (or when the `terraform` block changes). You should see a green success message.
+2. `terraform validate`- confirms your syntax is correct.
+3. `terraform fmt`- fixes formatting in place. If no changes are needed, it outputs nothing.
+4. `terraform plan`- generates the execution plan (the "diff"). Ignore the note at the end; treat it as successful unless an explicit error is shown.
+5. `terraform apply`- runs the code. Type `yes` to confirm. You should see your output message in the results as shown [here](../assets/output.PNG).
+
+---
+
+## The Google Provider and a Basic Infrastructure Example
+
+The previous example skipped a major Terraform concept: the **provider**. A provider is a plugin that tells Terraform how to talk to a specific API. This section covers the Google provider and deploying a VM to GCP.
+
 ### Authentication
 
-Terraform itself does not need to authenticate itself (prove who it is to GCP). However, the Google plugin that is used with Terraform will need some way to prove it is allowed to make API calls to your GCP account. There is a specific order to this:
+Terraform itself does not authenticate to GCP. The Google provider plugin handles that. There are three ways it can prove your identity to GCP, checked in this order:
 
-1. **Provider credentials argument** — The ideal method that uses a service account and JSON token (we use this)
-2. **Environment variables** — Equally acceptable method but requires slightly more setup
-3. **ADCs** — This is the same as letting Terraform use your Gmail identity to run API calls and is the least ideal
+1. **Provider credentials argument**- uses a service account JSON key file (we use this)
+2. **Environment variables**- equally acceptable, slightly more setup required
+3. **Application Default Credentials (ADC)**- uses your personal Gmail identity; least preferred
 
-This does not  to make a lot of sense right now. We will come back to the important part and you actually already did the legwork for this during software installs.
+All setup for option 1 was completed during the install process. GCP generated a JSON key file for your account, which you should see in VS Code right now.
 
-**Authentication documentation:** https://registry.terraform.io/providers/hashicorp/google/latest/docs/guides/provider_reference#authentication
+[Google Provider Authentication Docs](https://registry.terraform.io/providers/hashicorp/google/latest/docs/guides/provider_reference#authentication)
 
+### Declaring the Google Provider
 
+Create a new file called `auth.tf`. Move the `terraform` block from `main.tf` into it, and delete the `output` block from `main.tf`. Then update the `terraform` block in `auth.tf` to declare the Google provider as a dependency:
 
+```hcl
+terraform {
+  required_version = ">= 1.5"
 
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 7.0"
+    }
+  }
+}
+```
+
+This tells Terraform to download the Google provider and use the latest 7.x release. Next, add a `provider` block below it in `auth.tf`:
+
+```hcl
+provider "google" {
+  project     = "YOUR_PROJECT_ID"
+  region      = "YOUR_REGION"
+  zone        = "YOUR_ZONE"
+  credentials = "YOUR_JSON_FILENAME"
+}
+```
+
+For example:
+
+```hcl
+provider "google" {
+  project     = "seir-1"
+  region      = "us-east1"
+  zone        = "us-east1-b"
+  credentials = "032326-tf-key.json"
+}
+```
+
+Your project ID is shown on the GCP console welcome page and can be copied from there. Your JSON key filename will be different. Most errors at this step come from a typo here. Your `auth.tf` should look something like [this](../assets/auth.PNG).
+
+### Writing the VM Resource
+
+To create, modify, or delete something in GCP with Terraform, we use a `resource` block. A resource block takes two labels: one identifying the resource type (which tells the Google provider what to create) and one that is our internal name for the block in our code (not the resource's name in GCP). Add the following to `main.tf`:
+
+```hcl
+resource "google_compute_instance" "our_first_terraform_vm" {
+  name         = "terraform-server"
+  machine_type = "e2-medium"
+
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-12"
+    }
+  }
+
+  network_interface {
+    network = "default"
+
+    access_config {} # External IP
+  }
+}
+```
+
+Breaking this down:
+
+- `google_compute_instance` tells the Google provider to create a VM
+- `our_first_terraform_vm` is what we call this block in our code
+- `name` and `machine_type` are simple arguments
+- `boot_disk` is a nested block that defines the persistent disk; `initialize_params` sets its initial configuration and `image` specifies the OS
+- `network_interface` puts the VM in the default VPC; since it is the default VPC, no subnet argument is needed
+- `access_config {}` with no arguments tells GCP to assign an external IP with default settings
+- The `#` at the end of that line starts a comment, which Terraform ignores
+
+No region or zone is specified in this resource block. When omitted, the Google provider uses the values set in the `provider` block in `auth.tf`.
+
+### Running the Workflow
+
+1. `terraform init`- required again since we added a provider. This downloads the Google provider binary into a `.terraform` directory and creates a `.terraform.lock.hcl` file recording which provider version was used.
+2. `terraform validate`- confirm syntax is correct.
+3. `terraform fmt`- fix any formatting if needed.
+4. `terraform plan`- review the execution plan carefully before proceeding.
+5. `terraform apply`- deploy the VM. Type `yes` to confirm.
+6. Check the GCP console to verify your VM exists.
+7. Run `terraform destroy` to tear it down, and confirm it is gone in the console.
+
+Note: when `terraform apply` runs for the first time it creates `terraform.tfstate`. Do not delete or manually edit this file. It is how Terraform tracks everything it manages. Also avoid making changes to Terraform-managed resources via the console or `gcloud`, as this introduces state drift -- a mismatch between the actual state of your account and what the state file believes is there. On subsequent applies or the first `terraform destroy`, Terraform also creates `terraform.tfstate.backup`, a copy of the state file from before that operation ran.
+
+---
 
 ## Learning Resources
 
-Official Terraform documentation:
-
-* https://developer.hashicorp.com/terraform/tutorials/aws-get-started
-* https://developer.hashicorp.com/terraform/language
-* https://registry.terraform.io/providers/hashicorp/aws/latest/docs
+- [Terraform GCP Tutorial](https://developer.hashicorp.com/terraform/tutorials/gcp-get-started)
+- [HCL Reference](https://developer.hashicorp.com/terraform/language)
+- [Google Provider Registry](https://registry.terraform.io/providers/hashicorp/google/latest/docs)
