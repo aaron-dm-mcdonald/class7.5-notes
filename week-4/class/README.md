@@ -129,6 +129,7 @@ This next step is for *Windows users only*. For Windows users VS Code's integrat
 Continuing the step for windows users, we need to choose Git Bash in the menu at the top of the screen that opens (this is called the command palette):
 ![](../assets/cmd-pal.png)
 
+
 Finally for windows users, click the new terminal button in the panel:
 ![](../assets/new-terminal.PNG)
 
