@@ -41,6 +41,11 @@ Start a test with this command:
 locust -f locustfile.py --headless -u 100 -r 10 --host http://<LB_IP_ADDRESS>
 ```
 
+### Which locustfile? 
+This [locustfile](./locustfile-supera.py) was written and tested for use with the [supera.sh](https://github.com/BalericaAI/SEIR-1/blob/main/weekly_lessons/weeka/userscripts/supera.sh) start-up script.
+
+The scripts in the [old-scripts](./old-scripts/) subdirectory are from class 6.5 and you could also use them if desired. 
+
 ### Flag Breakdown 
 * `--headless`: Runs the test in the terminal without the web UI.
 * `-u 100`: **Users**. Total concurrent users to simulate.
@@ -49,6 +54,8 @@ locust -f locustfile.py --headless -u 100 -r 10 --host http://<LB_IP_ADDRESS>
 * `-f`: Points to your script. Optional if your file is named `locustfile.py` in the current folder.
 
 ---
+
+
 
 ## Alternative Tools
 
